@@ -110,13 +110,13 @@ curl \
 Building containers in CPU-only mode:
 
 ```shell
-docker build ./llama.cpp/
+docker build ./llama.cpp/ --file ./llama.cpp/Dockerfile --tag llama.cpp/cpu:latest
 ```
 
 Building the container for CUDA:
 
 ```shell
-docker build ./llama.cpp/ --file ./llama.cpp/Dockerfile.cuda
+docker build ./llama.cpp/ --file ./llama.cpp/Dockerfile --tag llama.cpp/cuda:latest
 ```
 
 Using the build argument `LLAMACPP_VERSION`, you can specify the tag version, branch name, or commit hash to build the

@@ -1,3 +1,8 @@
+ARG LLAMA_SOURCE_DIR="/app/llama.cpp"
+ARG INSTALLATION_PATH="${LLAMA_SOURCE_DIR}/install"
+ARG BUILD_DIR="build"
+ARG BUILD_CONFIG_TYPE="Release"
+
 FROM ubuntu:22.04 AS builder
 WORKDIR /app
 
@@ -13,18 +18,26 @@ ARG LLAMACPP_VERSION="master"
 
 # Install dependencies
 RUN set -xe \
- && apt update -q \
- && apt install -fyq bash wget git make g++ \
- && apt clean
+&& apt update -q \
+&& apt install -fyq bash wget git make g++ cmake ninja-build \
+#&& apt install -fyq cmake-curses-gui \
+&& apt clean
 
 # Clone repo
 RUN set -xe \
  && git clone --branch "$LLAMACPP_VERSION" --depth 1 "$LLAMACPP_REPO"
 
 # Build binaries
-WORKDIR /app/llama.cpp
+ARG LLAMA_SOURCE_DIR
+ARG INSTALLATION_PATH
+ARG BUILD_DIR
+ARG BUILD_CONFIG_TYPE
+WORKDIR ${LLAMA_SOURCE_DIR}
 RUN set -xe \
- && GGML_RPC=ON make -j$(nproc) llama-server llama-cli llama-embedding rpc-server libggml.so libllama.so
+ #&& GGML_RPC=ON make -j$(nproc) llama-server llama-cli llama-embedding rpc-server libggml.so libllama.so
+ && cmake -G "Ninja Multi-Config" -B build -DGGML_CUDA=OFF -DGGML_RPC=ON -DGGML_AVX=ON -DGGML_AVX2=ON -DGGML_CCACHE=OFF \
+ && cmake --build ${BUILD_DIR} --config ${BUILD_CONFIG_TYPE} \
+ && cmake --install ${BUILD_DIR} --prefix="${INSTALLATION_PATH}"
 
 
 
@@ -42,12 +55,20 @@ RUN set -xe \
  && mkdir -pv /app/models
 
 # Copy compiled tools
-COPY --from=builder /app/llama.cpp/libllama.so /usr/lib/x86_64-linux-gnu
-COPY --from=builder /app/llama.cpp/libggml.so /usr/lib/x86_64-linux-gnu
-COPY --from=builder /app/llama.cpp/rpc-server .
-COPY --from=builder /app/llama.cpp/llama-cli .
-COPY --from=builder /app/llama.cpp/llama-embedding .
-COPY --from=builder /app/llama.cpp/llama-server .
+ARG INSTALLATION_PATH
+ARG BIN_BUILD_DIR="${INSTALLATION_PATH}/bin"
+ARG LIB_BUILD_DIR="${INSTALLATION_PATH}/lib"
+COPY --from=builder ${LIB_BUILD_DIR}/libllama.so /usr/lib/x86_64-linux-gnu
+COPY --from=builder ${LIB_BUILD_DIR}/libggml.so /usr/lib/x86_64-linux-gnu
+COPY --from=builder ${BIN_BUILD_DIR}/llama-cli .
+COPY --from=builder ${BIN_BUILD_DIR}/llama-embedding .
+COPY --from=builder ${BIN_BUILD_DIR}/llama-server .
+
+ARG BUILD_DIR
+ARG BUILD_CONFIG_TYPE
+ARG LLAMA_SOURCE_DIR
+ARG RPC_PATH="${LLAMA_SOURCE_DIR}/${BUILD_DIR}/bin/${BUILD_CONFIG_TYPE}"
+COPY --from=builder ${RPC_PATH}/rpc-server .
 
 # Init entrypoint
 ADD entrypoint.sh .
