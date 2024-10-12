@@ -1,0 +1,55 @@
+services:
+  backend-cpu:
+    image: llama.cpp/cpu:latest
+    restart: "unless-stopped"
+    #build:
+    #  context: ./llama.cpp
+    #  dockerfile: Dockerfile.cuda
+    #  args:
+    #    - LLAMACPP_VERSION=b3700
+    environment:
+      # Режим работы (RPC-сервер)
+      APP_MODE: backend
+      # Количество доступной RPC-серверу оперативной памяти видеокарты (в Мегабайтах)
+      APP_MEM: 24576
+    ports:
+      - "192.168.0.143:50252:50052"
+
+  backend-cuda_0:
+    image: llama.cpp/cuda:latest
+    restart: "unless-stopped"
+    environment:
+      # Operation mode (RPC server)
+      APP_MODE: backend
+      # Amount of GPU memory available to the RPC server (in Megabytes)
+      APP_MEM: 8192
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              #count: 2
+              device_ids: ["0"] 
+              capabilities: [ gpu ]
+    ports:
+      - "192.168.0.143:50253:50052"
+
+#  backend-cuda_1:
+#    image: llama.cpp/cuda:latest
+#    restart: "unless-stopped"
+#    environment:
+      # Operation mode (RPC server)
+#      APP_MODE: backend
+      # Amount of GPU memory available to the RPC server (in Megabytes)
+#      APP_MEM: 2048
+#    deploy:
+#      resources:
+#        reservations:
+#          devices:
+#            - driver: nvidia
+              #count: 2
+#              device_ids: ["1"] 
+#              capabilities: [ gpu ]
+#    ports:
+#     - "192.168.0.143:50254:50052"
+
