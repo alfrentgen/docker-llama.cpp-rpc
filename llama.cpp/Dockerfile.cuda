@@ -14,7 +14,7 @@ ARG LLAMACPP_VERSION="master"
 # Install dependencies
 RUN set -xe \
  && apt update -q \
- && apt install -fyq bash wget git make g++ \
+ && apt install -fyq bash wget git cmake make g++ \
  && apt clean
 
 # Clone repo
@@ -26,7 +26,9 @@ WORKDIR /app/llama.cpp
 RUN ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/cuda/lib64/stubs/libcuda.so.1
 RUN set -xe \
  && export LD_LIBRARY_PATH=/usr/local/cuda/lib64/stubs/:$LD_LIBRARY_PATH \
- && GGML_CUDA=ON GGML_RPC=ON make -j$(nproc) llama-server llama-cli llama-embedding rpc-server libggml.so libllama.so
+ && mkdir build && cd build \
+ && cmake .. -DGGML_CUDA=ON -DGGML_RPC=ON \
+ && make -j$(nproc) llama-server llama-cli llama-embedding rpc-server
 
 
 
@@ -44,12 +46,12 @@ RUN set -xe \
  && mkdir -pv /app/models
 
 # Copy compiled tools
-COPY --from=builder /app/llama.cpp/libllama.so /usr/lib/x86_64-linux-gnu
-COPY --from=builder /app/llama.cpp/libggml.so /usr/lib/x86_64-linux-gnu
-COPY --from=builder /app/llama.cpp/rpc-server .
-COPY --from=builder /app/llama.cpp/llama-cli .
-COPY --from=builder /app/llama.cpp/llama-embedding .
-COPY --from=builder /app/llama.cpp/llama-server .
+COPY --from=builder /app/llama.cpp/build/src/libllama.so /usr/lib/x86_64-linux-gnu
+COPY --from=builder /app/llama.cpp/build/ggml/src/libggml.so /usr/lib/x86_64-linux-gnu
+COPY --from=builder /app/llama.cpp/build/bin/rpc-server .
+COPY --from=builder /app/llama.cpp/build/bin/llama-cli .
+COPY --from=builder /app/llama.cpp/build/bin/llama-embedding .
+COPY --from=builder /app/llama.cpp/build/bin/llama-server .
 
 # Init entrypoint
 ADD entrypoint.sh .
