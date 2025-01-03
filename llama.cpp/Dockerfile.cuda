@@ -61,8 +61,7 @@ RUN set -xe \
 ARG INSTALLATION_PATH
 ARG BIN_BUILD_DIR="${INSTALLATION_PATH}/bin"
 ARG LIB_BUILD_DIR="${INSTALLATION_PATH}/lib"
-COPY --from=builder ${LIB_BUILD_DIR}/libllama.so /usr/lib/x86_64-linux-gnu
-COPY --from=builder ${LIB_BUILD_DIR}/libggml.so /usr/lib/x86_64-linux-gnu
+COPY --from=builder ${LIB_BUILD_DIR}/*.so /usr/lib/x86_64-linux-gnu/
 COPY --from=builder ${BIN_BUILD_DIR}/llama-cli .
 COPY --from=builder ${BIN_BUILD_DIR}/llama-embedding .
 COPY --from=builder ${BIN_BUILD_DIR}/llama-server .

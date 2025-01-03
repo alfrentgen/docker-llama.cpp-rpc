@@ -2,8 +2,9 @@ ARG LLAMA_SOURCE_DIR="/app/llama.cpp"
 ARG INSTALLATION_PATH="${LLAMA_SOURCE_DIR}/install"
 ARG BUILD_DIR="build"
 ARG BUILD_CONFIG_TYPE="Release"
+ARG IMAGE_NAME="intel/deep-learning-essentials:2025.0.0-0-devel-ubuntu22.04"
 
-FROM ubuntu:22.04 AS builder
+FROM ${IMAGE_NAME} AS builder
 WORKDIR /app
 
 ARG LLAMACPP_REPO="https://github.com/ggerganov/llama.cpp.git"
@@ -35,13 +36,14 @@ ARG BUILD_CONFIG_TYPE
 WORKDIR ${LLAMA_SOURCE_DIR}
 RUN set -xe \
  #&& GGML_RPC=ON make -j$(nproc) llama-server llama-cli llama-embedding rpc-server libggml.so libllama.so
- && cmake -G "Ninja Multi-Config" -B build -DGGML_CUDA=OFF -DGGML_RPC=ON -DGGML_AVX=ON -DGGML_AVX2=ON -DGGML_CCACHE=OFF \
+ && cmake -G "Ninja Multi-Config" -B build -DGGML_CUDA=OFF -DGGML_NATIVE=OFF -DGGML_CCACHE=OFF -DGGML_STATIC=OFF \
+ -DGGML_SYCL=ON -DGGML_SYCL_F16=ON -DGGML_RPC=ON -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx \
  && cmake --build ${BUILD_DIR} --config ${BUILD_CONFIG_TYPE} \
  && cmake --install ${BUILD_DIR} --prefix="${INSTALLATION_PATH}"
-RUN ls -lah /app/llama.cpp/install
 
 
-FROM ubuntu:22.04
+
+FROM ${IMAGE_NAME}
 WORKDIR /app
 
 # Install basic dependencies
