@@ -116,7 +116,7 @@ docker build ./llama.cpp/ --file ./llama.cpp/Dockerfile --tag llama.cpp/cpu:late
 Building the container for CUDA:
 
 ```shell
-docker build ./llama.cpp/ --file ./llama.cpp/Dockerfile --tag llama.cpp/cuda:latest
+docker build ./llama.cpp/ --file ./llama.cpp/Dockerfile.cuda --tag llama.cpp/cuda:latest
 ```
 
 Using the build argument `LLAMACPP_VERSION`, you can specify the tag version, branch name, or commit hash to build the
